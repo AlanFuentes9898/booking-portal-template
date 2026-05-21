@@ -1,0 +1,66 @@
+{
+  "common": {
+    "cta": "Book appointment",
+    "ctaSecondary": "Learn more",
+    "loading": "Loading…",
+    "language": "Language",
+    "spanish": "Español",
+    "english": "English"
+  },
+  "nav": {
+    "home": "Home",
+    "services": "Services",
+    "about": "About",
+    "contact": "Contact",
+    "faq": "FAQ",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu"
+  },
+  "home": {
+    "heroEyebrow": "Professional care",
+    "heroTitle": "Personalized attention, close support",
+    "heroSubtitle": "Book your appointment online in under a minute. In-person and virtual sessions.",
+    "servicesTitle": "Services",
+    "servicesSubtitle": "Choose the consultation that fits your moment.",
+    "aboutTitle": "About me",
+    "aboutBody": "Welcome. A short introduction to my approach goes here. Edit this text from the admin panel → Settings → Brand & profile → Bio.",
+    "howTitle": "How it works",
+    "howStep1Title": "Book your appointment",
+    "howStep1Body": "Pick day, time and modality (in-person or virtual) in under a minute.",
+    "howStep2Title": "Get your confirmation",
+    "howStep2Body": "Receive email with details and automatic reminders.",
+    "howStep3Title": "We meet",
+    "howStep3Body": "Personalized plan and ongoing follow-up.",
+    "testimonialsTitle": "What clients say",
+    "testimonial1": "Very professional and close attention. I felt heard at all times.",
+    "testimonial1Author": "Andrés",
+    "testimonial2": "I learned to make better decisions for my health. Game changer.",
+    "testimonial2Author": "Lucía",
+    "testimonial3": "Clear plan, no magic promises. Sustainable results.",
+    "testimonial3Author": "Mariana",
+    "faqTitle": "FAQ",
+    "faq1Q": "Is the consultation in-person or virtual?",
+    "faq1A": "Both options are available. You pick when booking.",
+    "faq2Q": "Do I need previous medical tests?",
+    "faq2A": "Not required. If you have recent tests, we review them in the session.",
+    "faq3Q": "How long is each session?",
+    "faq3A": "Each type has its duration; you'll see it when choosing.",
+    "faq4Q": "Can I cancel or reschedule?",
+    "faq4A": "Yes, up to a certain number of hours before (per policy) from the email link."
+  },
+  "footer": {
+    "tagline": "Professional care with a close, personalized approach.",
+    "follow": "Follow",
+    "contact": "Contact",
+    "rights": "All rights reserved."
+  },
+  "pages": {
+    "servicesTitle": "Our services",
+    "servicesIntro": "Every consultation is designed to support your process. Prices are shown when published.",
+    "aboutTitle": "About me",
+    "aboutLead": "A short presentation of the clinic. Edit this text from the admin panel.",
+    "contactTitle": "Contact us",
+    "contactBody": "Have questions before booking? Reach out via any of the following channels.",
+    "faqPageTitle": "Frequently asked questions"
+  }
+}

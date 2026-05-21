@@ -1,0 +1,66 @@
+{
+  "common": {
+    "cta": "Agendar cita",
+    "ctaSecondary": "Conoce más",
+    "loading": "Cargando…",
+    "language": "Idioma",
+    "spanish": "Español",
+    "english": "English"
+  },
+  "nav": {
+    "home": "Inicio",
+    "services": "Servicios",
+    "about": "Sobre mí",
+    "contact": "Contacto",
+    "faq": "Preguntas frecuentes",
+    "openMenu": "Abrir menú",
+    "closeMenu": "Cerrar menú"
+  },
+  "home": {
+    "heroEyebrow": "Atención profesional",
+    "heroTitle": "Cuidamos de ti con un acompañamiento cercano y personalizado",
+    "heroSubtitle": "Agenda tu consulta en línea en menos de un minuto. Atención presencial y virtual.",
+    "servicesTitle": "Servicios",
+    "servicesSubtitle": "Elige el tipo de consulta que se adapta a tu momento.",
+    "aboutTitle": "Sobre mí",
+    "aboutBody": "Bienvenido. Aquí va una breve presentación de mi enfoque profesional. Edita este texto desde el panel admin → Configuración → Marca y perfil → Bio.",
+    "howTitle": "¿Cómo funciona?",
+    "howStep1Title": "Agendas tu cita",
+    "howStep1Body": "Elige día, hora y modalidad (presencial o virtual) en menos de un minuto.",
+    "howStep2Title": "Recibes tu confirmación",
+    "howStep2Body": "Te llega un correo con todos los detalles y recordatorios automáticos.",
+    "howStep3Title": "Te atendemos",
+    "howStep3Body": "Vivimos tu sesión con un plan personalizado y seguimiento continuo.",
+    "testimonialsTitle": "Lo que dicen quienes ya confían en mí",
+    "testimonial1": "Atención muy profesional y cercana. Me sentí escuchada en todo momento.",
+    "testimonial1Author": "Andrés",
+    "testimonial2": "Aprendí a tomar mejores decisiones para mi salud. Cambio total.",
+    "testimonial2Author": "Lucía",
+    "testimonial3": "Plan claro, sin promesas mágicas. Resultados sostenibles.",
+    "testimonial3Author": "Mariana",
+    "faqTitle": "Preguntas frecuentes",
+    "faq1Q": "¿La consulta es presencial o virtual?",
+    "faq1A": "Ambas opciones están disponibles. Eliges la modalidad al momento de agendar.",
+    "faq2Q": "¿Necesito estudios previos?",
+    "faq2A": "No son obligatorios. Si tienes estudios recientes, los revisamos en la sesión.",
+    "faq3Q": "¿Cuánto dura cada sesión?",
+    "faq3A": "Cada tipo de consulta tiene su duración. Lo verás al momento de elegir.",
+    "faq4Q": "¿Puedo cancelar o reagendar?",
+    "faq4A": "Sí, hasta cierto número de horas antes (según política) desde el enlace que recibes por correo."
+  },
+  "footer": {
+    "tagline": "Atención profesional con un enfoque cercano y personalizado.",
+    "follow": "Síguenos",
+    "contact": "Contacto",
+    "rights": "Todos los derechos reservados."
+  },
+  "pages": {
+    "servicesTitle": "Nuestros servicios",
+    "servicesIntro": "Cada consulta está diseñada para acompañarte en tu proceso. Los precios se muestran cuando están publicados.",
+    "aboutTitle": "Sobre mí",
+    "aboutLead": "Una breve presentación del consultorio. Edita este texto desde el panel admin.",
+    "contactTitle": "Contáctanos",
+    "contactBody": "¿Tienes dudas antes de agendar? Escríbenos por cualquiera de los siguientes medios.",
+    "faqPageTitle": "Preguntas frecuentes"
+  }
+}
