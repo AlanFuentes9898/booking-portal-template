@@ -5,6 +5,10 @@ import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireProfile } from "@/lib/auth";
 import { publicEnv } from "@/lib/env";
+import {
+  type SettingsActionState,
+  zodIssuesToFieldErrors,
+} from "@/lib/admin-form-state";
 
 const generalSchema = z.object({
   show_prices_publicly: z.boolean(),
@@ -13,13 +17,25 @@ const generalSchema = z.object({
   min_booking_hours_ahead: z.number().int().min(0).max(168),
   max_booking_days_ahead: z.number().int().min(1).max(365),
   cancellation_hours_limit: z.number().int().min(0).max(168),
-  cancellation_policy_es: z.string().max(500),
-  cancellation_policy_en: z.string().max(500),
+  cancellation_policy_es: z.string().max(2000),
+  cancellation_policy_en: z.string().max(2000),
 });
 
-export async function saveGeneralSettings(formData: FormData) {
-  await requireProfile();
-  const parsed = generalSchema.parse({
+export async function saveGeneralSettings(
+  _prev: SettingsActionState,
+  formData: FormData,
+): Promise<SettingsActionState> {
+  try {
+    await requireProfile();
+  } catch {
+    return {
+      ok: false,
+      message: "Tu sesión expiró. Vuelve a iniciar sesión.",
+      ts: Date.now(),
+    };
+  }
+
+  const parsed = generalSchema.safeParse({
     show_prices_publicly: formData.get("show_prices_publicly") === "on",
     payments_enabled: formData.get("payments_enabled") === "on",
     buffer_minutes: Number(formData.get("buffer_minutes") ?? 10),
@@ -40,12 +56,18 @@ export async function saveGeneralSettings(formData: FormData) {
     ),
   });
 
-  // whatsapp_enabled is only writable when the feature flag is on (i.e. the
-  // checkbox is actually rendered). Otherwise we leave the existing setting
-  // untouched so toggling the flag doesn't silently nuke it.
+  if (!parsed.success) {
+    return {
+      ok: false,
+      message: "Algunos campos exceden el límite o tienen valores inválidos.",
+      fieldErrors: zodIssuesToFieldErrors(parsed.error.issues),
+      ts: Date.now(),
+    };
+  }
+
   const rows: Array<{ key: string; value: unknown; updated_at: string }> = [];
   const ts = new Date().toISOString();
-  for (const [key, value] of Object.entries(parsed)) {
+  for (const [key, value] of Object.entries(parsed.data)) {
     rows.push({ key, value: JSON.parse(JSON.stringify(value)), updated_at: ts });
   }
   if (publicEnv.NEXT_PUBLIC_FEATURE_WHATSAPP) {
@@ -56,8 +78,24 @@ export async function saveGeneralSettings(formData: FormData) {
     });
   }
 
-  const supabase = createAdminClient();
-  await supabase.from("settings").upsert(rows, { onConflict: "key" });
+  try {
+    const supabase = createAdminClient();
+    const { error } = await supabase
+      .from("settings")
+      .upsert(rows, { onConflict: "key" });
+    if (error) throw error;
+  } catch (err) {
+    return {
+      ok: false,
+      message:
+        err instanceof Error
+          ? `No se pudo guardar: ${err.message}`
+          : "No se pudo guardar la configuración. Intenta de nuevo.",
+      ts: Date.now(),
+    };
+  }
+
   revalidatePath("/admin/configuracion/general");
-  revalidatePath("/", "layout"); // public pages read settings
+  revalidatePath("/", "layout");
+  return { ok: true, message: "Configuración guardada", ts: Date.now() };
 }

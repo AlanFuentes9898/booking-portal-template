@@ -1,8 +1,8 @@
-import { Trash2, Plus } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { Button } from "@/components/ui/button";
 import { formatTz } from "@/lib/time";
-import { createBlock, deleteBlock } from "./actions";
+import { deleteBlock } from "./actions";
+import { BlockCreateForm } from "./block-create-form";
 
 export const dynamic = "force-dynamic";
 
@@ -34,36 +34,7 @@ export default async function BloqueosPage() {
           Bloquea fechas/horas para vacaciones, días feriados o ausencias.
           Las horas son en zona México.
         </p>
-        <form action={createBlock} className="grid sm:grid-cols-[1fr_1fr_1fr_auto] gap-3 items-end">
-          <Field label="Inicio">
-            <input
-              type="datetime-local"
-              name="start_local"
-              required
-              className="form-input"
-            />
-          </Field>
-          <Field label="Fin">
-            <input
-              type="datetime-local"
-              name="end_local"
-              required
-              className="form-input"
-            />
-          </Field>
-          <Field label="Motivo (opcional)">
-            <input
-              type="text"
-              name="reason"
-              maxLength={200}
-              placeholder="Vacaciones, congreso…"
-              className="form-input"
-            />
-          </Field>
-          <Button type="submit">
-            <Plus size={15} /> Crear
-          </Button>
-        </form>
+        <BlockCreateForm />
       </section>
 
       {/* List */}
@@ -134,25 +105,12 @@ export default async function BloqueosPage() {
           border-color: var(--color-brand-green);
           box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand-green) 28%, transparent);
         }
+        .form-input[aria-invalid="true"] {
+          border-color: var(--color-brand-pink);
+          box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand-pink) 25%, transparent);
+        }
       `}</style>
     </div>
-  );
-}
-
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="block">
-      <span className="block text-xs uppercase tracking-wider font-semibold text-[color:var(--color-brand-muted)] mb-1.5">
-        {label}
-      </span>
-      {children}
-    </label>
   );
 }
 

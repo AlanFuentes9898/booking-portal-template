@@ -156,8 +156,8 @@ export default async function ContactPage({ params }: Props) {
             </h2>
             <p className="mt-3 text-[color:var(--color-brand-ink)]/75 leading-relaxed">
               {locale === "es"
-                ? "Las consultas virtuales se realizan por Google Meet, con enlace incluido en tu confirmación. La modalidad presencial es en Ciudad de México — los detalles del consultorio se comparten al agendar."
-                : "Virtual sessions happen on Google Meet, with the link in your confirmation. In-person sessions are in Mexico City — clinic details are shared upon booking."}
+                ? `Las consultas virtuales se realizan por Google Meet, con enlace incluido en tu confirmación. La modalidad presencial es en ${settings.office_city} — los detalles del consultorio se comparten al agendar.`
+                : `Virtual sessions happen on Google Meet, with the link in your confirmation. In-person sessions are in ${settings.office_city} — clinic details are shared upon booking.`}
             </p>
           </div>
         </div>

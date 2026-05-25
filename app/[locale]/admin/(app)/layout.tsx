@@ -1,3 +1,4 @@
+import { Toaster } from "sonner";
 import { requireProfile } from "@/lib/auth";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
 
@@ -23,6 +24,13 @@ export default async function AdminAppLayout({
         }}
       />
       <div className="min-w-0">{children}</div>
+      <Toaster
+        richColors
+        position="top-right"
+        toastOptions={{
+          style: { fontFamily: "inherit" },
+        }}
+      />
     </div>
   );
 }

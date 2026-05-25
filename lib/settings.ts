@@ -15,6 +15,8 @@ export type AppSettings = {
   public_phone: string;
   public_email: string;
   public_address: string;
+  /** City label shown in the public booking flow and next to times in emails/admin (e.g. "Morelia"). */
+  office_city: string;
   bio_es: string;
   bio_en: string;
   cancellation_policy_es: string;
@@ -66,6 +68,7 @@ const DEFAULTS: AppSettings = {
   public_phone: "",
   public_email: "",
   public_address: "",
+  office_city: "CDMX",
   bio_es: "",
   bio_en: "",
   cancellation_policy_es:

@@ -67,6 +67,7 @@ export default async function BookingPage({ params }: Props) {
         questions={questions}
         showPrices={settings.show_prices_publicly}
         cancellationPolicy={policy}
+        officeCity={settings.office_city}
       />
     </div>
   );

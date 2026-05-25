@@ -95,7 +95,7 @@ export default async function AppointmentManagePage({ params }: Props) {
             <DetailRow
               icon={<Clock size={16} />}
               label={locale === "es" ? "Hora" : "Time"}
-              value={`${formattedTime} (CDMX) · ${type?.duration_minutes ?? 0} min`}
+              value={`${formattedTime} (${settings.office_city}) · ${type?.duration_minutes ?? 0} min`}
             />
             <DetailRow
               icon={

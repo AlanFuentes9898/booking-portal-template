@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Plus, Pencil } from "lucide-react";
+import { useRef, useState } from "react";
+import { Plus, Pencil, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -13,6 +13,8 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
+import { Field } from "@/components/ui/field";
+import { useDialogAction } from "@/components/admin/use-dialog-action";
 import { upsertQuestion } from "./actions";
 
 export type Question = {
@@ -42,10 +44,19 @@ export function QuestionForm({ question }: { question?: Question }) {
   const [fieldType, setFieldType] = useState<Question["field_type"]>(
     question?.field_type ?? "textarea",
   );
+  const formRef = useRef<HTMLFormElement>(null);
   const isEdit = !!question;
 
+  const { state, formAction, pending } = useDialogAction(upsertQuestion, {
+    onOpenChange: setOpen,
+    formRef,
+    successMessage: isEdit ? "Pregunta actualizada" : "Pregunta creada",
+    resetOnSuccess: !isEdit,
+  });
+  const e = state.fieldErrors ?? {};
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(v) => !pending && setOpen(v)}>
       <DialogTrigger asChild>
         {isEdit ? (
           <button
@@ -70,16 +81,16 @@ export function QuestionForm({ question }: { question?: Question }) {
           </DialogDescription>
         </DialogHeader>
 
-        <form
-          action={async (fd) => {
-            await upsertQuestion(fd);
-            setOpen(false);
-          }}
-          className="space-y-4"
-        >
+        <form ref={formRef} action={formAction} className="space-y-4">
           {question && <input type="hidden" name="id" value={question.id} />}
 
-          <Field label="Pregunta (ES) *">
+          <Field
+            label="Pregunta (ES) *"
+            help="Texto exacto que verá el paciente. Hasta 500 caracteres."
+            maxLength={500}
+            defaultValue={question?.question_es ?? ""}
+            error={e.question_es}
+          >
             <textarea
               name="question_es"
               required
@@ -89,7 +100,13 @@ export function QuestionForm({ question }: { question?: Question }) {
               className="form-input"
             />
           </Field>
-          <Field label="Question (EN)">
+          <Field
+            label="Question (EN)"
+            help="Optional English version. Leave empty to show only the Spanish text."
+            maxLength={500}
+            defaultValue={question?.question_en ?? ""}
+            error={e.question_en}
+          >
             <textarea
               name="question_en"
               rows={2}
@@ -99,12 +116,15 @@ export function QuestionForm({ question }: { question?: Question }) {
             />
           </Field>
 
-          <Field label="Tipo de campo">
+          <Field
+            label="Tipo de campo"
+            help="Define cómo responde el paciente: texto corto, texto largo (varias líneas), número, lista de opciones, sí/no, o fecha."
+          >
             <select
               name="field_type"
               value={fieldType}
-              onChange={(e) =>
-                setFieldType(e.target.value as Question["field_type"])
+              onChange={(ev) =>
+                setFieldType(ev.target.value as Question["field_type"])
               }
               className="form-input"
             >
@@ -117,7 +137,10 @@ export function QuestionForm({ question }: { question?: Question }) {
           </Field>
 
           {fieldType === "select" && (
-            <Field label="Opciones (una por línea)">
+            <Field
+              label="Opciones (una por línea)"
+              help="Cada línea aparece como una opción seleccionable."
+            >
               <textarea
                 name="options"
                 rows={4}
@@ -151,11 +174,12 @@ export function QuestionForm({ question }: { question?: Question }) {
 
           <DialogFooter>
             <DialogClose asChild>
-              <Button type="button" variant="ghost">
+              <Button type="button" variant="ghost" disabled={pending}>
                 Cancelar
               </Button>
             </DialogClose>
-            <Button type="submit">
+            <Button type="submit" disabled={pending}>
+              {pending && <Loader2 className="animate-spin" size={14} />}
               {isEdit ? "Guardar" : "Crear pregunta"}
             </Button>
           </DialogFooter>
@@ -174,26 +198,13 @@ export function QuestionForm({ question }: { question?: Question }) {
               border-color: var(--color-brand-green);
               box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand-green) 28%, transparent);
             }
+            .form-input[aria-invalid="true"] {
+              border-color: var(--color-brand-pink);
+              box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand-pink) 25%, transparent);
+            }
           `}</style>
         </form>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="block">
-      <span className="block text-xs uppercase tracking-wider font-semibold text-[color:var(--color-brand-muted)] mb-1">
-        {label}
-      </span>
-      {children}
-    </label>
   );
 }

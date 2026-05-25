@@ -18,6 +18,7 @@ import { PageHeader } from "@/components/admin/page-header";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { Button } from "@/components/ui/button";
 import { getAppointmentById } from "@/lib/admin-queries";
+import { getSettings } from "@/lib/settings";
 import { formatTz } from "@/lib/time";
 import { updateAppointmentStatus, updateAdminNotes } from "./actions";
 import { publicEnv } from "@/lib/env";
@@ -30,7 +31,10 @@ type Props = {
 
 export default async function CitaDetailPage({ params }: Props) {
   const { id } = await params;
-  const appt = await getAppointmentById(id);
+  const [appt, settings] = await Promise.all([
+    getAppointmentById(id),
+    getSettings(),
+  ]);
   if (!appt) notFound();
 
   const typeName = appt.appointment_type?.name_es ?? "Cita";
@@ -77,7 +81,7 @@ export default async function CitaDetailPage({ params }: Props) {
               <DetailRow
                 icon={<Clock size={15} />}
                 label="Hora"
-                value={`${formatTz(appt.start_time, "HH:mm")} – ${formatTz(appt.end_time, "HH:mm")} CDMX`}
+                value={`${formatTz(appt.start_time, "HH:mm")} – ${formatTz(appt.end_time, "HH:mm")} ${settings.office_city}`}
               />
               <DetailRow
                 icon={

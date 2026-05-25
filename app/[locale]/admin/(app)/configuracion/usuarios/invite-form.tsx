@@ -1,7 +1,7 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
-import { useState } from "react";
+import { useActionState, useEffect, useState, useRef } from "react";
+import { toast } from "sonner";
 import { Plus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,6 +14,7 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
+import { Field } from "@/components/ui/field";
 import { inviteUser, type InviteResult } from "./actions";
 
 const initial: InviteResult = { ok: false, error: null };
@@ -22,11 +23,33 @@ export function InviteForm() {
   const [open, setOpen] = useState(false);
   const [state, formAction, pending] = useActionState(inviteUser, initial);
   const formRef = useRef<HTMLFormElement>(null);
+  // Distinct submission counter so the effect refires even on repeat errors.
+  const submissionId = useRef(0);
+  const lastSeenId = useRef(0);
 
   useEffect(() => {
+    // useActionState swaps `state` ref on every response — count it.
+    submissionId.current += 1;
+    if (submissionId.current === lastSeenId.current) return;
+    if (submissionId.current === 1) {
+      // first render with initial state, skip
+      lastSeenId.current = 1;
+      return;
+    }
+    lastSeenId.current = submissionId.current;
+
     if (state.ok) {
+      toast.success("Usuario creado. Se envió email para establecer contraseña.");
       setOpen(false);
       formRef.current?.reset();
+    } else if (state.error) {
+      const friendly =
+        state.error === "create_failed"
+          ? "No se pudo crear el usuario. Verifica que el email no esté registrado."
+          : state.error === "invalid_input"
+            ? "Revisa los datos: el email y el nombre son obligatorios."
+            : state.error;
+      toast.error(friendly);
     }
   }, [state]);
 
@@ -47,7 +70,11 @@ export function InviteForm() {
         </DialogHeader>
 
         <form ref={formRef} action={formAction} className="space-y-4">
-          <Field label="Nombre completo">
+          <Field
+            label="Nombre completo"
+            help="Como aparecerá en el sidebar admin y en emails internos."
+            maxLength={120}
+          >
             <input
               name="full_name"
               required
@@ -55,7 +82,10 @@ export function InviteForm() {
               className="form-input"
             />
           </Field>
-          <Field label="Email">
+          <Field
+            label="Email"
+            help="El usuario recibirá aquí el link para crear su contraseña."
+          >
             <input
               type="email"
               name="email"
@@ -63,7 +93,10 @@ export function InviteForm() {
               className="form-input"
             />
           </Field>
-          <Field label="Rol">
+          <Field
+            label="Rol"
+            help="Owner = control total (puede crear otros usuarios). Asistente = puede gestionar citas pero no configuración crítica."
+          >
             <select
               name="role"
               defaultValue="assistant"
@@ -73,14 +106,6 @@ export function InviteForm() {
               <option value="owner">Owner (acceso total)</option>
             </select>
           </Field>
-
-          {state.error && (
-            <p className="text-sm text-[color:var(--color-brand-pink)] bg-[color:var(--color-brand-pink-soft)]/30 rounded-xl px-3 py-2.5">
-              {state.error === "create_failed"
-                ? "No se pudo crear el usuario. Verifica que el email no esté registrado."
-                : state.error}
-            </p>
-          )}
 
           <DialogFooter>
             <DialogClose asChild>
@@ -112,22 +137,5 @@ export function InviteForm() {
         </form>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="block">
-      <span className="block text-xs uppercase tracking-wider font-semibold text-[color:var(--color-brand-muted)] mb-1">
-        {label}
-      </span>
-      {children}
-    </label>
   );
 }

@@ -21,6 +21,8 @@ export type AppointmentReminderProps = {
   meetLink?: string | null;
   manageUrl: string;
   brandName?: string;
+  /** Short city label shown next to the time, e.g. "CDMX", "Morelia". */
+  officeCity?: string;
 };
 
 const COPY = {
@@ -127,7 +129,10 @@ export function AppointmentReminderEmail(props: AppointmentReminderProps) {
             <Text style={{ margin: 0, fontWeight: 600 }}>{t.details}</Text>
             <Row label={t.type} value={props.appointmentTypeName} />
             <Row label={t.date} value={props.formattedDate} />
-            <Row label={t.time} value={`${props.formattedTime} (CDMX)`} />
+            <Row
+              label={t.time}
+              value={`${props.formattedTime} (${props.officeCity ?? "CDMX"})`}
+            />
             <Row
               label={t.modality}
               value={props.modality === "in_person" ? t.inPerson : t.virtual}

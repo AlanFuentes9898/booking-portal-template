@@ -25,8 +25,12 @@ type Appt = {
 };
 
 /**
- * Hourly cron. Finds confirmed appointments starting between [now+23h, now+25h),
+ * Daily cron. Finds confirmed appointments starting between [now+23h, now+25h),
  * sends each one a 24h reminder, and logs to notification_log to dedupe.
+ *
+ * Schedule: 8 AM CDMX (= 14:00 UTC) — matches `vercel.json`. Runs once a day
+ * because Vercel Hobby plan caps at 1 cron run/day. For per-hour granularity,
+ * upgrade to Vercel Pro and change the schedule back to `0 * * * *`.
  */
 export async function GET(req: NextRequest) {
   const auth = assertCronAuth(req);
@@ -118,6 +122,7 @@ export async function GET(req: NextRequest) {
         meetLink: a.meet_link,
         manageUrl,
         brandName: brand.name,
+        officeCity: settings.office_city,
       }),
     });
 

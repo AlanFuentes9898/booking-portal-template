@@ -107,6 +107,7 @@ export function BookingWizard(props: {
   questions: WizardQuestion[];
   showPrices: boolean;
   cancellationPolicy: string;
+  officeCity: string;
 }) {
   const locale = useLocale() as "es" | "en";
   const [state, dispatch] = useReducer(reducer, initial);
@@ -174,6 +175,7 @@ export function BookingWizard(props: {
             <StepModality
               locale={locale}
               current={state.modality}
+              officeCity={props.officeCity}
               onBack={() => dispatch({ type: "GOTO", step: 1 })}
               onPick={(m) => dispatch({ type: "MODALITY", m })}
             />
@@ -233,6 +235,7 @@ export function BookingWizard(props: {
           state={summaryState}
           locale={locale}
           cancellationPolicy={props.cancellationPolicy}
+          officeCity={props.officeCity}
         />
       </div>
     </div>
@@ -319,6 +322,7 @@ function StepType(props: {
 function StepModality(props: {
   locale: "es" | "en";
   current: "in_person" | "virtual" | null;
+  officeCity: string;
   onBack: () => void;
   onPick: (m: "in_person" | "virtual") => void;
 }) {
@@ -342,8 +346,8 @@ function StepModality(props: {
           title={props.locale === "es" ? "Presencial" : "In person"}
           subtitle={
             props.locale === "es"
-              ? "Consultorio en CDMX"
-              : "Mexico City clinic"
+              ? `Consultorio en ${props.officeCity}`
+              : `${props.officeCity} clinic`
           }
           onClick={() => props.onPick("in_person")}
         />

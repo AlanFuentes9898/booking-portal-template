@@ -29,11 +29,13 @@ export function BookingSummary({
   state,
   locale,
   cancellationPolicy,
+  officeCity,
   emptyHint,
 }: {
   state: SummaryState;
   locale: "es" | "en";
   cancellationPolicy: string;
+  officeCity: string;
   emptyHint?: string;
 }) {
   const fnsLocale = locale === "es" ? es : enUS;
@@ -122,7 +124,7 @@ export function BookingSummary({
               <Row
                 icon={<Clock size={16} />}
                 label={locale === "es" ? "Hora" : "Time"}
-                value={`${timeLabel} (CDMX)`}
+                value={`${timeLabel} (${officeCity})`}
               />
             )}
             {state.patientName && (
