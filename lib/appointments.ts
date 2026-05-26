@@ -209,7 +209,9 @@ export async function createAppointment(
     });
   }
 
-  const adminEmail = serverEnv().ADMIN_NOTIFICATION_EMAIL;
+  const adminEmail =
+    settings.admin_notification_email?.trim() ||
+    serverEnv().ADMIN_NOTIFICATION_EMAIL;
   if (adminEmail && settings.notify_email_on_booking) {
     await sendEmail({
       to: adminEmail,
@@ -304,7 +306,9 @@ export async function cancelAppointmentByToken(
         }),
       });
     }
-    const adminEmail = serverEnv().ADMIN_NOTIFICATION_EMAIL;
+    const adminEmail =
+      settings.admin_notification_email?.trim() ||
+      serverEnv().ADMIN_NOTIFICATION_EMAIL;
     if (adminEmail && settings.notify_email_on_cancellation) {
       await sendEmail({
         to: adminEmail,

@@ -17,6 +17,11 @@ export type AppSettings = {
   public_address: string;
   /** City label shown in the public booking flow and next to times in emails/admin (e.g. "Morelia"). */
   office_city: string;
+  /**
+   * Email that receives admin notifications (new bookings, cancellations, daily
+   * summary). When empty, falls back to the ADMIN_NOTIFICATION_EMAIL env var.
+   */
+  admin_notification_email: string;
   bio_es: string;
   bio_en: string;
   cancellation_policy_es: string;
@@ -69,6 +74,7 @@ const DEFAULTS: AppSettings = {
   public_email: "",
   public_address: "",
   office_city: "CDMX",
+  admin_notification_email: "",
   bio_es: "",
   bio_en: "",
   cancellation_policy_es:

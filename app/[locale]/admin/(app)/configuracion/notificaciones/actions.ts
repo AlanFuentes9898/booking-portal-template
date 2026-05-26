@@ -15,6 +15,10 @@ const emailSchema = z.object({
   notify_email_on_cancellation: z.boolean(),
   notify_email_reminder_24h: z.boolean(),
   daily_summary_hour: z.number().int().min(0).max(23),
+  admin_notification_email: z
+    .string()
+    .email("Email no válido (ej: maricarmen@ejemplo.com)")
+    .or(z.literal("")),
 });
 
 const whatsappSchema = z.object({
@@ -44,6 +48,9 @@ export async function saveNotificationSettings(
     notify_email_reminder_24h:
       formData.get("notify_email_reminder_24h") === "on",
     daily_summary_hour: Number(formData.get("daily_summary_hour") ?? 8),
+    admin_notification_email: String(
+      formData.get("admin_notification_email") ?? "",
+    ).trim(),
   });
 
   if (!emailParsed.success) {

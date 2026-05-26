@@ -2,6 +2,7 @@
 
 import { Mail, Phone, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Field } from "@/components/ui/field";
 import { SettingsForm } from "@/components/admin/settings-form";
 import { saveNotificationSettings } from "./actions";
 import type { AppSettings } from "@/lib/settings";
@@ -54,8 +55,52 @@ export function NotificacionesForm({
       successMessage="Notificaciones guardadas"
       className="space-y-6"
     >
-      {(_state, pending) => (
+      {(state, pending) => (
         <>
+          <section className="rounded-2xl bg-white border border-[color:var(--color-brand-ink)]/8 p-6">
+            <header className="mb-5">
+              <h2 className="text-base font-semibold">Email del administrador</h2>
+              <p className="text-xs text-[color:var(--color-brand-muted)] mt-1">
+                Dirección que recibe todos los avisos para ti: nuevas citas,
+                cancelaciones y el resumen diario.
+              </p>
+            </header>
+            <Field
+              label="Email para recibir notificaciones"
+              help="Tu email personal o de trabajo. Es el destinatario de todos los avisos internos del sistema; los pacientes no lo ven nunca. Si lo dejas vacío, se usa el email configurado en Vercel (ADMIN_NOTIFICATION_EMAIL)."
+              defaultValue={s.admin_notification_email}
+              error={state.fieldErrors?.admin_notification_email}
+            >
+              <input
+                type="email"
+                name="admin_notification_email"
+                defaultValue={s.admin_notification_email}
+                placeholder="tucorreo@ejemplo.com"
+                className="form-input"
+              />
+            </Field>
+            <style>{`
+              .form-input {
+                width: 100%;
+                padding: 11px 14px;
+                border-radius: 12px;
+                border: 1px solid rgba(42,42,42,0.15);
+                background: white;
+                font-size: 14px;
+                outline: none;
+                transition: border-color .15s, box-shadow .15s;
+              }
+              .form-input:focus {
+                border-color: var(--color-brand-green);
+                box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand-green) 28%, transparent);
+              }
+              .form-input[aria-invalid="true"] {
+                border-color: var(--color-brand-pink);
+                box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand-pink) 25%, transparent);
+              }
+            `}</style>
+          </section>
+
           <section className="rounded-2xl bg-white border border-[color:var(--color-brand-ink)]/8 p-6">
             <header className="mb-5">
               <h2 className="text-base font-semibold">Canales por evento</h2>

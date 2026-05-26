@@ -6,6 +6,7 @@ import { formatTz } from "@/lib/time";
 import { serverEnv } from "@/lib/env";
 import { assertCronAuth } from "@/lib/cron-auth";
 import { getBrand } from "@/lib/brand";
+import { getSettings } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -23,19 +24,20 @@ export async function GET(req: NextRequest) {
   const auth = assertCronAuth(req);
   if (auth) return auth;
 
-  const env = serverEnv();
-  const adminEmail = env.ADMIN_NOTIFICATION_EMAIL;
+  const [appts, brand, settings] = await Promise.all([
+    getTodayAppointments(),
+    getBrand(),
+    getSettings(),
+  ]);
+  const adminEmail =
+    settings.admin_notification_email?.trim() ||
+    serverEnv().ADMIN_NOTIFICATION_EMAIL;
   if (!adminEmail) {
     return NextResponse.json(
-      { ok: false, error: "ADMIN_NOTIFICATION_EMAIL not configured" },
+      { ok: false, error: "admin_notification_email not configured" },
       { status: 200 },
     );
   }
-
-  const [appts, brand] = await Promise.all([
-    getTodayAppointments(),
-    getBrand(),
-  ]);
   const confirmed = appts.filter((a) => a.status === "confirmed");
 
   const formattedDate = formatTz(
