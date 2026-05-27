@@ -21,6 +21,7 @@ const schema = z.object({
   patient_sport: z.string().optional(),
   admin_notes: z.string().optional(),
   patient_reason: z.string().optional(),
+  meet_link: z.string().max(500).optional(),
   send_confirmation_email: z.boolean(),
 });
 
@@ -47,6 +48,7 @@ export async function createAdminAppointmentAction(
     patient_sport: (formData.get("patient_sport") as string) || undefined,
     admin_notes: (formData.get("admin_notes") as string) || undefined,
     patient_reason: (formData.get("patient_reason") as string) || undefined,
+    meet_link: (formData.get("meet_link") as string) || undefined,
     send_confirmation_email:
       formData.get("send_confirmation_email") === "on",
   });
@@ -76,6 +78,7 @@ export async function createAdminAppointmentAction(
         },
     admin_notes: v.admin_notes || undefined,
     patient_reason: v.patient_reason || undefined,
+    meet_link: v.modality === "virtual" ? v.meet_link || null : null,
     send_confirmation_email: v.send_confirmation_email,
     created_by: profile.id,
   });

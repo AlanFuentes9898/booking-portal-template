@@ -8,6 +8,8 @@ import {
   ListChecks,
   Users,
   Settings,
+  Wallet,
+  Lock,
   ChevronDown,
   LogOut,
   Menu,
@@ -18,21 +20,50 @@ import { Link, usePathname } from "@/i18n/navigation";
 import { signOutAction } from "@/app/[locale]/admin/login/actions";
 import { publicEnv } from "@/lib/env";
 
-type NavItem = { href: string; label: string; icon: LucideIcon };
+type NavItem = {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  locked?: boolean;
+};
 
-const NAV: NavItem[] = [
+const BASE_NAV: NavItem[] = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/calendario", label: "Calendario", icon: CalendarDays },
   { href: "/admin/citas", label: "Citas", icon: ListChecks },
   { href: "/admin/pacientes", label: "Pacientes", icon: Users },
-  { href: "/admin/configuracion", label: "Configuración", icon: Settings },
 ];
+
+const FINANCE_ITEM: NavItem = {
+  href: "/admin/finanzas",
+  label: "Finanzas",
+  icon: Wallet,
+};
+
+const SETTINGS_ITEM: NavItem = {
+  href: "/admin/configuracion",
+  label: "Configuración",
+  icon: Settings,
+};
 
 export function AdminSidebar({
   user,
+  showFinance = false,
+  financeLocked = false,
 }: {
   user: { name: string; email: string; role: string };
+  /** Whether the Finanzas nav item should be rendered at all. */
+  showFinance?: boolean;
+  /** When true the item is shown with a lock icon and links to upgrade prompt. */
+  financeLocked?: boolean;
 }) {
+  const NAV: NavItem[] = [
+    ...BASE_NAV,
+    ...(showFinance
+      ? [{ ...FINANCE_ITEM, locked: financeLocked }]
+      : []),
+    SETTINGS_ITEM,
+  ];
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const brandShort = publicEnv.NEXT_PUBLIC_BRAND_SHORT_NAME;
@@ -107,11 +138,17 @@ export function AdminSidebar({
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                     isActive
                       ? "bg-[color:var(--color-brand-green-soft)]/60 text-[color:var(--color-brand-ink)]"
-                      : "text-[color:var(--color-brand-ink)]/70 hover:bg-[color:var(--color-brand-green-soft)]/30 hover:text-[color:var(--color-brand-ink)]"
+                      : item.locked
+                        ? "text-[color:var(--color-brand-ink)]/45 hover:bg-amber-50 hover:text-[color:var(--color-brand-ink)]/70"
+                        : "text-[color:var(--color-brand-ink)]/70 hover:bg-[color:var(--color-brand-green-soft)]/30 hover:text-[color:var(--color-brand-ink)]"
                   }`}
+                  title={item.locked ? "Función no disponible en tu plan" : undefined}
                 >
                   <Icon size={18} />
-                  {item.label}
+                  <span className="flex-1">{item.label}</span>
+                  {item.locked && (
+                    <Lock size={13} className="text-amber-600/70" />
+                  )}
                 </Link>
               );
             })}

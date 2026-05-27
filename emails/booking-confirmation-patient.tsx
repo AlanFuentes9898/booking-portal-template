@@ -35,7 +35,7 @@ const COPY = {
     time: "Hora",
     modality: "Modalidad",
     inPerson: "Presencial",
-    virtual: "Virtual (Google Meet)",
+    virtual: "Virtual",
     meetLink: "Enlace de la sesión",
     manage: "Gestionar mi cita",
     manageBody:
@@ -53,7 +53,7 @@ const COPY = {
     time: "Time",
     modality: "Modality",
     inPerson: "In person",
-    virtual: "Virtual (Google Meet)",
+    virtual: "Virtual",
     meetLink: "Session link",
     manage: "Manage my appointment",
     manageBody:

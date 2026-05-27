@@ -36,6 +36,14 @@ const publicSchema = z.object({
     .enum(["true", "false"])
     .default("false")
     .transform((v) => v === "true"),
+  /**
+   * Subscription tier this deployment belongs to. Controls which premium
+   * features are unlocked. Set by the platform owner in Vercel (the end client
+   * does not edit this).
+   */
+  NEXT_PUBLIC_PLAN_TIER: z
+    .enum(["esencial", "profesional", "clinica"])
+    .default("esencial"),
 });
 
 const serverSchema = z.object({
@@ -70,6 +78,7 @@ const parsedPublic = publicSchema.safeParse({
   NEXT_PUBLIC_BRAND_SHORT_NAME: process.env.NEXT_PUBLIC_BRAND_SHORT_NAME,
   NEXT_PUBLIC_VERTICAL: process.env.NEXT_PUBLIC_VERTICAL,
   NEXT_PUBLIC_FEATURE_WHATSAPP: process.env.NEXT_PUBLIC_FEATURE_WHATSAPP,
+  NEXT_PUBLIC_PLAN_TIER: process.env.NEXT_PUBLIC_PLAN_TIER,
 });
 
 if (!parsedPublic.success) {

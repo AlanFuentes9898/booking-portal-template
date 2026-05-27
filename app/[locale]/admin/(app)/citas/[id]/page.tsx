@@ -12,15 +12,25 @@ import {
   Ban,
   AlertTriangle,
   UserX,
+  Send,
+  Wallet,
 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { PageHeader } from "@/components/admin/page-header";
 import { StatusBadge } from "@/components/admin/status-badge";
+import { PaymentBadge, formatAmount } from "@/components/admin/payment-badge";
 import { Button } from "@/components/ui/button";
 import { getAppointmentById } from "@/lib/admin-queries";
 import { getSettings } from "@/lib/settings";
+import { getPlan } from "@/lib/plan";
 import { formatTz } from "@/lib/time";
-import { updateAppointmentStatus, updateAdminNotes } from "./actions";
+import {
+  updateAppointmentStatus,
+  updateAdminNotes,
+  updateAppointmentPayment,
+  updateAppointmentMeetLink,
+  resendBookingEmail,
+} from "./actions";
 import { publicEnv } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
@@ -36,6 +46,9 @@ export default async function CitaDetailPage({ params }: Props) {
     getSettings(),
   ]);
   if (!appt) notFound();
+
+  const plan = getPlan();
+  const paymentsActive = settings.payments_enabled && plan.allows("payments");
 
   const typeName = appt.appointment_type?.name_es ?? "Cita";
   const patientUrl = appt.patient
@@ -93,30 +106,60 @@ export default async function CitaDetailPage({ params }: Props) {
                 }
                 label="Modalidad"
                 value={
-                  appt.modality === "virtual"
-                    ? "Virtual (Google Meet)"
-                    : "Presencial"
+                  appt.modality === "virtual" ? "Virtual" : "Presencial"
                 }
               />
-              <DetailRow
-                icon={<CheckCircle2 size={15} />}
-                label="Pago"
-                value={
-                  appt.payment_status === "paid"
-                    ? `Pagado · $${appt.amount_paid?.toLocaleString("es-MX") ?? "?"}`
-                    : appt.payment_status === "not_applicable"
-                      ? "No aplica"
-                      : "Pendiente"
-                }
-              />
-            </div>
-
-            {appt.meet_link && (
-              <div className="mt-5 pt-5 border-t border-dashed border-[color:var(--color-brand-ink)]/10">
+              {paymentsActive && (
                 <DetailRow
-                  icon={<ExternalLink size={15} />}
-                  label="Meet"
+                  icon={<Wallet size={15} />}
+                  label="Pago"
                   value={
+                    <span className="inline-flex items-center gap-2">
+                      <PaymentBadge status={appt.payment_status} />
+                      {appt.payment_status === "paid" && (
+                        <span className="text-[color:var(--color-brand-ink)]/80 text-sm">
+                          {formatAmount(appt.amount_paid, settings.currency_code)}
+                        </span>
+                      )}
+                    </span>
+                  }
+                />
+              )}
+            </div>
+          </section>
+
+          {/* Virtual session link */}
+          {appt.modality === "virtual" && (
+            <section className="rounded-2xl bg-white border border-[color:var(--color-brand-ink)]/8 p-6">
+              <h2 className="text-base font-semibold mb-1">
+                Enlace de la sesión
+              </h2>
+              <p className="text-xs text-[color:var(--color-brand-muted)] mb-4">
+                Pega aquí el link que generes en Zoom, Google Meet, Jitsi u otro.
+                El paciente lo verá en su correo de confirmación.
+              </p>
+              <form action={updateAppointmentMeetLink} className="space-y-3">
+                <input type="hidden" name="id" value={appt.id} />
+                <input
+                  type="url"
+                  name="meet_link"
+                  defaultValue={appt.meet_link ?? ""}
+                  placeholder="https://meet.example.com/abc-defg-hij"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[color:var(--color-brand-ink)]/15 focus:border-[color:var(--color-brand-green)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-brand-green)]/30 text-sm"
+                />
+                <div className="flex flex-wrap justify-end gap-2">
+                  <Button type="submit" size="sm" variant="outline">
+                    Guardar link
+                  </Button>
+                </div>
+              </form>
+              {appt.meet_link && (
+                <>
+                  <div className="mt-3 flex items-center gap-2 text-sm">
+                    <ExternalLink
+                      size={14}
+                      className="text-[color:var(--color-brand-muted)]"
+                    />
                     <a
                       href={appt.meet_link}
                       target="_blank"
@@ -125,11 +168,36 @@ export default async function CitaDetailPage({ params }: Props) {
                     >
                       {appt.meet_link}
                     </a>
-                  }
-                />
-              </div>
-            )}
-          </section>
+                  </div>
+                  <form action={resendBookingEmail} className="mt-4">
+                    <input type="hidden" name="id" value={appt.id} />
+                    <Button
+                      type="submit"
+                      size="sm"
+                      variant="outline"
+                      className="gap-2"
+                    >
+                      <Send size={14} /> Reenviar correo con el link
+                    </Button>
+                  </form>
+                </>
+              )}
+            </section>
+          )}
+
+          {/* Payment */}
+          {paymentsActive && (
+            <PaymentSection
+              appointmentId={appt.id}
+              paymentStatus={appt.payment_status}
+              amountPaid={appt.amount_paid}
+              paymentMethod={appt.payment_method}
+              paidAt={appt.paid_at}
+              suggestedAmount={appt.appointment_type?.price_mxn ?? null}
+              methods={settings.payment_methods}
+              currencyCode={settings.currency_code}
+            />
+          )}
 
           {/* Patient */}
           {appt.patient && (
@@ -360,6 +428,114 @@ function StatusButton({
         {icon} {label}
       </button>
     </form>
+  );
+}
+
+function PaymentSection({
+  appointmentId,
+  paymentStatus,
+  amountPaid,
+  paymentMethod,
+  paidAt,
+  suggestedAmount,
+  methods,
+  currencyCode,
+}: {
+  appointmentId: string;
+  paymentStatus: string;
+  amountPaid: number | null;
+  paymentMethod: string | null;
+  paidAt: string | null;
+  suggestedAmount: number | null;
+  methods: string[];
+  currencyCode: string;
+}) {
+  const todayISO = new Date().toISOString().slice(0, 10);
+  const paidDate = paidAt ? paidAt.slice(0, 10) : todayISO;
+  const defaultAmount =
+    amountPaid != null ? amountPaid : (suggestedAmount ?? "");
+  return (
+    <section className="rounded-2xl bg-white border border-[color:var(--color-brand-ink)]/8 p-6">
+      <div className="flex items-start justify-between gap-3 mb-4">
+        <div>
+          <h2 className="text-base font-semibold">Pago</h2>
+          <p className="text-xs text-[color:var(--color-brand-muted)] mt-1">
+            Registra si esta cita ya fue cobrada, el monto y el método.
+          </p>
+        </div>
+        <PaymentBadge status={paymentStatus} />
+      </div>
+      <form
+        action={updateAppointmentPayment}
+        className="grid sm:grid-cols-2 gap-4"
+      >
+        <input type="hidden" name="id" value={appointmentId} />
+        <label className="block">
+          <span className="block text-xs uppercase tracking-wider text-[color:var(--color-brand-muted)] font-semibold mb-1.5">
+            Estado
+          </span>
+          <select
+            name="payment_status"
+            defaultValue={paymentStatus}
+            className="w-full px-3 py-2.5 rounded-xl border border-[color:var(--color-brand-ink)]/15 focus:border-[color:var(--color-brand-green)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-brand-green)]/30 text-sm bg-white"
+          >
+            <option value="unpaid">Pendiente</option>
+            <option value="paid">Pagado</option>
+            <option value="refunded">Reembolsado</option>
+            <option value="not_applicable">No aplica</option>
+          </select>
+        </label>
+        <label className="block">
+          <span className="block text-xs uppercase tracking-wider text-[color:var(--color-brand-muted)] font-semibold mb-1.5">
+            Monto ({currencyCode})
+          </span>
+          <input
+            type="number"
+            name="amount_paid"
+            min={0}
+            step="0.01"
+            defaultValue={defaultAmount === "" ? "" : String(defaultAmount)}
+            placeholder={
+              suggestedAmount != null ? String(suggestedAmount) : "0.00"
+            }
+            className="w-full px-3 py-2.5 rounded-xl border border-[color:var(--color-brand-ink)]/15 focus:border-[color:var(--color-brand-green)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-brand-green)]/30 text-sm tabular-nums"
+          />
+        </label>
+        <label className="block">
+          <span className="block text-xs uppercase tracking-wider text-[color:var(--color-brand-muted)] font-semibold mb-1.5">
+            Método
+          </span>
+          <select
+            name="payment_method"
+            defaultValue={paymentMethod ?? ""}
+            className="w-full px-3 py-2.5 rounded-xl border border-[color:var(--color-brand-ink)]/15 focus:border-[color:var(--color-brand-green)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-brand-green)]/30 text-sm bg-white"
+          >
+            <option value="">—</option>
+            {methods.map((m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="block">
+          <span className="block text-xs uppercase tracking-wider text-[color:var(--color-brand-muted)] font-semibold mb-1.5">
+            Fecha de pago
+          </span>
+          <input
+            type="date"
+            name="paid_at"
+            defaultValue={paidDate}
+            className="w-full px-3 py-2.5 rounded-xl border border-[color:var(--color-brand-ink)]/15 focus:border-[color:var(--color-brand-green)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-brand-green)]/30 text-sm tabular-nums"
+          />
+        </label>
+        <div className="sm:col-span-2 flex justify-end">
+          <Button type="submit" size="sm">
+            Guardar pago
+          </Button>
+        </div>
+      </form>
+    </section>
   );
 }
 

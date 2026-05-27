@@ -28,6 +28,10 @@ export type AppSettings = {
   cancellation_policy_en: string;
   cancellation_hours_limit: number;
   payments_enabled: boolean;
+  /** Methods admins can pick from when marking an appointment paid. Free-form so each client uses their own (e.g. "OXXO", "PayPal"). */
+  payment_methods: string[];
+  /** ISO 4217 currency code used to render amounts ("MXN", "USD", ...). */
+  currency_code: string;
   whatsapp_enabled: boolean;
   daily_summary_hour: number;
   // ===== Identity (overrides env defaults at runtime) =====
@@ -83,6 +87,8 @@ const DEFAULTS: AppSettings = {
     "You can cancel or reschedule up to 12 hours before your appointment at no cost.",
   cancellation_hours_limit: 12,
   payments_enabled: false,
+  payment_methods: ["Efectivo", "Transferencia", "Tarjeta"],
+  currency_code: "MXN",
   whatsapp_enabled: true,
   daily_summary_hour: 8,
   // Identity defaults are intentionally empty so the brand layer can fall

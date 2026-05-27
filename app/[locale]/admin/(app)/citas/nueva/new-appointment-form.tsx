@@ -56,6 +56,7 @@ export function NewAppointmentForm({
   const [sendEmail, setSendEmail] = useState(true);
   const [adminNotes, setAdminNotes] = useState("");
   const [patientReason, setPatientReason] = useState("");
+  const [meetLink, setMeetLink] = useState("");
   const [loadingSlots, setLoadingSlots] = useState(false);
 
   const [state, formAction, pending] = useActionState(
@@ -128,6 +129,7 @@ export function NewAppointmentForm({
       )}
       <input type="hidden" name="admin_notes" value={adminNotes} />
       <input type="hidden" name="patient_reason" value={patientReason} />
+      <input type="hidden" name="meet_link" value={meetLink} />
       {/* Note: the toggle below directly controls a real checkbox below for the
           form value, no hidden input needed. */}
 
@@ -190,10 +192,27 @@ export function NewAppointmentForm({
               selected={modality === "virtual"}
               icon={<Video size={18} />}
               title="Virtual"
-              subtitle="Google Meet"
+              subtitle="Videollamada"
               onClick={() => setModality("virtual")}
             />
           </div>
+          {modality === "virtual" && (
+            <div className="mt-4">
+              <Field label="Enlace de la sesión (opcional)">
+                <input
+                  type="url"
+                  value={meetLink}
+                  onChange={(e) => setMeetLink(e.target.value)}
+                  placeholder="https://meet.example.com/abc-defg-hij"
+                  className="form-input"
+                />
+                <p className="mt-1.5 text-xs text-[color:var(--color-brand-muted)]">
+                  Pega aquí el link que generes (Zoom, Meet, Jitsi, etc.). Lo
+                  puedes agregar también después desde el detalle de la cita.
+                </p>
+              </Field>
+            </div>
+          )}
         </Section>
 
         {/* 4. Date + time */}

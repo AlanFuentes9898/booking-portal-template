@@ -163,7 +163,7 @@ export async function createAppointment(
       patient_reason: input.patient_reason ?? null,
       questionnaire_response: input.questionnaire_response ?? null,
     })
-    .select("id,cancellation_token,start_time,end_time")
+    .select("id,cancellation_token,start_time,end_time,meet_link")
     .single();
   if (apptErr || !appt) {
     return { ok: false, error: "appointment_create_failed", status: 500 };
@@ -201,7 +201,7 @@ export async function createAppointment(
         formattedDate,
         formattedTime,
         modality: input.modality,
-        meetLink: null,
+        meetLink: appt.meet_link ?? null,
         manageUrl,
         cancellationPolicy: policy,
         brandName: brand.name,
@@ -355,6 +355,8 @@ export type CreateAdminAppointmentInput = {
   };
   admin_notes?: string;
   patient_reason?: string;
+  /** Optional. If provided, stored on the appointment and included in the confirmation email. */
+  meet_link?: string | null;
   send_confirmation_email: boolean;
   created_by: string; // admin profile id
 };
@@ -540,9 +542,10 @@ export async function createAdminAppointment(
       payment_status: settings.payments_enabled ? "unpaid" : "not_applicable",
       patient_reason: input.patient_reason ?? null,
       admin_notes: input.admin_notes ?? null,
+      meet_link: input.meet_link?.trim() ? input.meet_link.trim() : null,
       created_by: input.created_by,
     })
-    .select("id,cancellation_token")
+    .select("id,cancellation_token,meet_link")
     .single();
   if (apptErr || !appt) {
     return { ok: false, error: "appointment_create_failed", status: 500 };
@@ -572,7 +575,7 @@ export async function createAdminAppointment(
         formattedDate,
         formattedTime,
         modality: input.modality,
-        meetLink: null,
+        meetLink: appt.meet_link ?? null,
         manageUrl,
         cancellationPolicy: policy,
         brandName: brand.name,

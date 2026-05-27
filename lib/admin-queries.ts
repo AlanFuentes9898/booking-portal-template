@@ -11,6 +11,8 @@ export type AdminAppointmentRow = {
   status: "confirmed" | "cancelled" | "completed" | "no_show";
   payment_status: string;
   amount_paid: number | null;
+  payment_method: string | null;
+  paid_at: string | null;
   meet_link: string | null;
   patient: {
     id: string;
@@ -38,6 +40,8 @@ type RawAppointmentJoin = {
   status: AdminAppointmentRow["status"];
   payment_status: string;
   amount_paid: number | null;
+  payment_method: string | null;
+  paid_at: string | null;
   meet_link: string | null;
   patients: AdminAppointmentRow["patient"] | AdminAppointmentRow["patient"][] | null;
   appointment_types:
@@ -59,6 +63,8 @@ function flatten(row: RawAppointmentJoin): AdminAppointmentRow {
     status: row.status,
     payment_status: row.payment_status,
     amount_paid: row.amount_paid,
+    payment_method: row.payment_method,
+    paid_at: row.paid_at,
     meet_link: row.meet_link,
     patient: patient ?? null,
     appointment_type: type ?? null,
@@ -66,7 +72,7 @@ function flatten(row: RawAppointmentJoin): AdminAppointmentRow {
 }
 
 const SELECT_FRAGMENT =
-  "id,start_time,end_time,modality,status,payment_status,amount_paid,meet_link," +
+  "id,start_time,end_time,modality,status,payment_status,amount_paid,payment_method,paid_at,meet_link," +
   "patients ( id, full_name, email, phone, sport, is_new )," +
   "appointment_types ( id, name_es, name_en, duration_minutes, price_mxn, color_hex )";
 
@@ -164,6 +170,7 @@ export async function getThisMonthStats(): Promise<MonthStats> {
 export type AppointmentListFilters = {
   status?: AdminAppointmentRow["status"] | "all";
   modality?: "all" | "in_person" | "virtual";
+  payment_status?: "all" | "unpaid" | "paid" | "refunded" | "not_applicable";
   search?: string;
   from?: string;
   to?: string;
@@ -177,6 +184,8 @@ export async function listAppointments(
   let q = supabase.from("appointments").select(SELECT_FRAGMENT);
   if (f.status && f.status !== "all") q = q.eq("status", f.status);
   if (f.modality && f.modality !== "all") q = q.eq("modality", f.modality);
+  if (f.payment_status && f.payment_status !== "all")
+    q = q.eq("payment_status", f.payment_status);
   if (f.from) q = q.gte("start_time", f.from);
   if (f.to) q = q.lt("start_time", f.to);
   q = q

@@ -2,8 +2,11 @@ import { Search, Video, MapPin, Plus } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { PageHeader } from "@/components/admin/page-header";
 import { StatusBadge } from "@/components/admin/status-badge";
+import { PaymentBadge, formatAmount } from "@/components/admin/payment-badge";
 import { Button } from "@/components/ui/button";
 import { listAppointments } from "@/lib/admin-queries";
+import { getSettings } from "@/lib/settings";
+import { getPlan } from "@/lib/plan";
 import { formatTz } from "@/lib/time";
 
 export const dynamic = "force-dynamic";
@@ -12,6 +15,7 @@ type Props = {
   searchParams: Promise<{
     status?: string;
     modality?: string;
+    payment_status?: string;
     q?: string;
     from?: string;
     to?: string;
@@ -31,10 +35,21 @@ export default async function CitasListPage({ searchParams }: Props) {
     sp.modality === "in_person" || sp.modality === "virtual"
       ? sp.modality
       : "all";
+  const paymentStatus =
+    sp.payment_status === "unpaid" ||
+    sp.payment_status === "paid" ||
+    sp.payment_status === "refunded" ||
+    sp.payment_status === "not_applicable"
+      ? sp.payment_status
+      : "all";
 
+  const settings = await getSettings();
+  const plan = getPlan();
+  const paymentsActive = settings.payments_enabled && plan.allows("payments");
   const rows = await listAppointments({
     status: status as "all" | "confirmed" | "cancelled" | "completed" | "no_show",
     modality,
+    payment_status: paymentStatus,
     search: sp.q,
     from: sp.from,
     to: sp.to,
@@ -55,7 +70,9 @@ export default async function CitasListPage({ searchParams }: Props) {
       />
 
       {/* Filters */}
-      <form className="rounded-2xl bg-white border border-[color:var(--color-brand-ink)]/8 p-4 mb-6 grid sm:grid-cols-[1fr_auto_auto_auto] gap-3 items-end">
+      <form
+        className={`rounded-2xl bg-white border border-[color:var(--color-brand-ink)]/8 p-4 mb-6 grid gap-3 items-end ${paymentsActive ? "sm:grid-cols-[1fr_auto_auto_auto_auto]" : "sm:grid-cols-[1fr_auto_auto_auto]"}`}
+      >
         <label className="block">
           <span className="block text-xs uppercase tracking-wider text-[color:var(--color-brand-muted)] font-semibold mb-1.5">
             Buscar paciente
@@ -103,6 +120,24 @@ export default async function CitasListPage({ searchParams }: Props) {
             <option value="virtual">Virtual</option>
           </select>
         </label>
+        {paymentsActive && (
+          <label className="block">
+            <span className="block text-xs uppercase tracking-wider text-[color:var(--color-brand-muted)] font-semibold mb-1.5">
+              Pago
+            </span>
+            <select
+              name="payment_status"
+              defaultValue={paymentStatus}
+              className="px-3 py-2.5 rounded-xl border border-[color:var(--color-brand-ink)]/15 focus:border-[color:var(--color-brand-green)] focus:outline-none focus:ring-2 focus:ring-[color:var(--color-brand-green)]/30 text-sm bg-white"
+            >
+              <option value="all">Todos</option>
+              <option value="unpaid">Pendiente</option>
+              <option value="paid">Pagado</option>
+              <option value="refunded">Reembolsado</option>
+              <option value="not_applicable">No aplica</option>
+            </select>
+          </label>
+        )}
         <button
           type="submit"
           className="px-5 py-2.5 rounded-xl bg-[color:var(--color-brand-green)] text-[color:var(--color-brand-ink)] text-sm font-medium hover:brightness-95 transition"
@@ -128,6 +163,9 @@ export default async function CitasListPage({ searchParams }: Props) {
                   <th className="px-4 py-3 font-semibold">Servicio</th>
                   <th className="px-4 py-3 font-semibold">Modalidad</th>
                   <th className="px-4 py-3 font-semibold">Estado</th>
+                  {paymentsActive && (
+                    <th className="px-4 py-3 font-semibold">Pago</th>
+                  )}
                   <th className="px-4 py-3"></th>
                 </tr>
               </thead>
@@ -171,6 +209,22 @@ export default async function CitasListPage({ searchParams }: Props) {
                     <td className="px-4 py-3">
                       <StatusBadge status={a.status} />
                     </td>
+                    {paymentsActive && (
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <div className="flex flex-col gap-0.5">
+                          <PaymentBadge status={a.payment_status} />
+                          {a.payment_status === "paid" &&
+                            a.amount_paid != null && (
+                              <span className="text-xs text-[color:var(--color-brand-muted)] tabular-nums">
+                                {formatAmount(
+                                  a.amount_paid,
+                                  settings.currency_code,
+                                )}
+                              </span>
+                            )}
+                        </div>
+                      </td>
+                    )}
                     <td className="px-4 py-3 whitespace-nowrap text-right">
                       <Link
                         href={`/admin/citas/${a.id}` as never}

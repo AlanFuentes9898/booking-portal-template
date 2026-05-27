@@ -10,6 +10,7 @@ const TABS = [
   { href: "/admin/configuracion/cuestionario", label: "Cuestionario", ownerOnly: false },
   { href: "/admin/configuracion/perfil", label: "Perfil público", ownerOnly: false },
   { href: "/admin/configuracion/notificaciones", label: "Notificaciones", ownerOnly: false },
+  { href: "/admin/configuracion/pagos", label: "Pagos", ownerOnly: false },
   { href: "/admin/configuracion/usuarios", label: "Usuarios", ownerOnly: true },
 ];
 
