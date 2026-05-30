@@ -67,7 +67,7 @@ export function NotificacionesForm({
             </header>
             <Field
               label="Email para recibir notificaciones"
-              help="Tu email personal o de trabajo. Es el destinatario de todos los avisos internos del sistema; los pacientes no lo ven nunca. Si lo dejas vacío, se usa el email configurado en Vercel (ADMIN_NOTIFICATION_EMAIL)."
+              help="Tu email personal o de trabajo. Es el destinatario de todos los avisos internos del sistema; los pacientes no lo ven nunca. Si lo dejas vacío, se usará una dirección predeterminada."
               defaultValue={s.admin_notification_email}
               error={state.fieldErrors?.admin_notification_email}
             >
@@ -177,9 +177,7 @@ export function NotificacionesForm({
               <p className="text-xs text-[color:var(--color-brand-muted)] mt-1">
                 Hora en la que recibes cada mañana un email con tus citas del
                 día. El sufijo entre paréntesis viene de la ciudad configurada
-                en Perfil público (por ejemplo "{s.office_city}"). En
-                producción la hora del cron se fija en <code>vercel.json</code>;
-                cambiar este número requiere actualizar también ese archivo.
+                en Perfil público (por ejemplo "{s.office_city}").
               </p>
             </header>
             <label className="flex items-center justify-between gap-4">

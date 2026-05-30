@@ -19,7 +19,7 @@ export function PerfilForm({ settings: s }: { settings: AppSettings }) {
           <>
             <Section
               title="Identidad"
-              description="Nombre del negocio y profesión. Si dejas vacío, se usa el valor configurado en NEXT_PUBLIC_BRAND_NAME del .env."
+              description="Nombre del negocio y profesión. Si dejas estos campos vacíos, se usará un valor predeterminado del sistema."
             >
               <FieldGrid>
                 <Field
@@ -33,7 +33,7 @@ export function PerfilForm({ settings: s }: { settings: AppSettings }) {
                     name="brand_name"
                     defaultValue={s.brand_name}
                     maxLength={80}
-                    placeholder="(usa el valor del .env si está vacío)"
+                    placeholder="Déjalo vacío para usar el predeterminado"
                     className="form-input"
                   />
                 </Field>
@@ -48,7 +48,7 @@ export function PerfilForm({ settings: s }: { settings: AppSettings }) {
                     name="brand_short_name"
                     defaultValue={s.brand_short_name}
                     maxLength={60}
-                    placeholder="(usa el valor del .env si está vacío)"
+                    placeholder="Déjalo vacío para usar el predeterminado"
                     className="form-input"
                   />
                 </Field>

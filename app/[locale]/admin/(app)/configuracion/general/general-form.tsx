@@ -39,15 +39,15 @@ export function GeneralForm({
           >
             <Toggle
               name="payments_enabled"
-              label="Pagos en línea (Stripe)"
-              description="Cuando esté listo Stripe, activa para cobrar al agendar."
+              label="Pagos en línea"
+              description="Actívalo para cobrar al agendar (requiere la integración de pagos habilitada)."
               checked={s.payments_enabled}
             />
             {showWhatsApp && (
               <Toggle
                 name="whatsapp_enabled"
                 label="Notificaciones por WhatsApp"
-                description="Requiere tener Meta WhatsApp Cloud API configurado."
+                description="Requiere que la integración de WhatsApp esté habilitada."
                 checked={s.whatsapp_enabled}
               />
             )}
