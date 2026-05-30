@@ -74,6 +74,24 @@ const MS_PER_MIN = 60_000;
 const MS_PER_HOUR = 3_600_000;
 const MS_PER_DAY = 86_400_000;
 
+/**
+ * Slot starts are snapped to this granularity (in minutes). With 30, slots are
+ * always offered at :00 and :30 wall-clock — so a 45-min appointment at 16:30
+ * is followed by 17:30 (not 17:15), regardless of duration+buffer arithmetic.
+ *
+ * NOTE: this is rounded in UTC epoch ms. That coincides with wall-clock rounding
+ * only when the clinic timezone has UTC-offset that is itself a multiple of 30min
+ * AND has no DST jumps inside the window. Both hold for America/Mexico_City
+ * (UTC-6, no DST since 2022). If we ever onboard a DST clinic, this needs to
+ * round in CLINIC_TZ wall-clock space instead.
+ */
+const SLOT_GRANULARITY_MIN = 30;
+
+function ceilToGranularityUtc(ms: number, granMin: number): number {
+  const granMs = granMin * MS_PER_MIN;
+  return Math.ceil(ms / granMs) * granMs;
+}
+
 /** Parse "HH:MM" or "HH:MM:SS" — returns [hours, minutes]. */
 function parseClockTime(s: string): [number, number] {
   const [h, m] = s.split(":");
@@ -124,29 +142,48 @@ function* iterateClinicDays(dateFrom: Date, dateTo: Date): Generator<Date> {
   }
 }
 
-/** Returns true if proposed slot collides with any blocked period (hard boundary, no buffer). */
-function collidesWithBlocked(slot: Slot, blocked: BlockedPeriod[]): boolean {
+/**
+ * If the slot collides with one or more blocked periods, returns the latest
+ * `end_time` among the colliders (epoch ms) so the caller can fast-forward.
+ * Returns `null` if no collision.
+ */
+function blockedCollisionEnd(
+  slot: Slot,
+  blocked: BlockedPeriod[],
+): number | null {
+  let maxEnd: number | null = null;
   for (const b of blocked) {
-    if (slot.start < b.end_time && b.start_time < slot.end) return true;
+    if (slot.start < b.end_time && b.start_time < slot.end) {
+      const e = b.end_time.getTime();
+      if (maxEnd === null || e > maxEnd) maxEnd = e;
+    }
   }
-  return false;
+  return maxEnd;
 }
 
-/** Returns true if proposed slot collides with an existing appointment, with buffer. */
-function collidesWithExisting(
+/**
+ * If the slot collides (buffered) with one or more existing appointments,
+ * returns the latest `end_time + buffer` so the caller can fast-forward past
+ * the busy region. Returns `null` if no collision.
+ */
+function existingCollisionEnd(
   slot: Slot,
   existing: ExistingAppointment[],
   bufferMinutes: number,
-): boolean {
+): number | null {
   const bufferMs = bufferMinutes * MS_PER_MIN;
+  let maxEnd: number | null = null;
   for (const a of existing) {
     const aStart = a.start_time.getTime();
     const aEnd = a.end_time.getTime();
     const sStart = slot.start.getTime();
     const sEnd = slot.end.getTime();
-    if (sStart < aEnd + bufferMs && aStart < sEnd + bufferMs) return true;
+    if (sStart < aEnd + bufferMs && aStart < sEnd + bufferMs) {
+      const e = aEnd + bufferMs;
+      if (maxEnd === null || e > maxEnd) maxEnd = e;
+    }
   }
-  return false;
+  return maxEnd;
 }
 
 export function computeAvailableSlots(input: AvailabilityInput): Slot[] {
@@ -161,9 +198,9 @@ export function computeAvailableSlots(input: AvailabilityInput): Slot[] {
   } = input;
 
   const { durationMinutes, bufferMinutes } = config;
-  const stepMinutes = durationMinutes + bufferMinutes;
-  const stepMs = stepMinutes * MS_PER_MIN;
   const durationMs = durationMinutes * MS_PER_MIN;
+  // Smallest forward step when a slot is accepted or harmlessly skipped.
+  const granStepMs = SLOT_GRANULARITY_MIN * MS_PER_MIN;
 
   const minBookingInstant = new Date(
     now.getTime() + config.minBookingHoursAhead * MS_PER_HOUR,
@@ -196,8 +233,12 @@ export function computeAvailableSlots(input: AvailabilityInput): Slot[] {
       const winStart = clinicWallClockToUtc(zonedDay, sh, sm);
       const winEnd = clinicWallClockToUtc(zonedDay, eh, em);
 
-      // Generate slot starts every stepMs, slot must fit entirely within window
-      let slotStart = winStart.getTime();
+      // Slot starts are snapped to SLOT_GRANULARITY_MIN (e.g. :00 and :30).
+      // The slot must still fit entirely within the working window.
+      let slotStart = ceilToGranularityUtc(
+        winStart.getTime(),
+        SLOT_GRANULARITY_MIN,
+      );
       while (slotStart + durationMs <= winEnd.getTime()) {
         const slot: Slot = {
           start: new Date(slotStart),
@@ -206,23 +247,27 @@ export function computeAvailableSlots(input: AvailabilityInput): Slot[] {
 
         // Filter: within effective window
         if (slot.start < effectiveFrom || slot.end > effectiveTo) {
-          slotStart += stepMs;
+          slotStart += granStepMs;
           continue;
         }
-        // Filter: not blocked
-        if (collidesWithBlocked(slot, blockedPeriods)) {
-          slotStart += stepMs;
+        // Filter: not blocked — fast-forward past the latest colliding block.
+        const blockedEnd = blockedCollisionEnd(slot, blockedPeriods);
+        if (blockedEnd !== null) {
+          slotStart = ceilToGranularityUtc(blockedEnd, SLOT_GRANULARITY_MIN);
           continue;
         }
-        // Filter: no collision with existing appointment (+buffer)
-        if (
-          collidesWithExisting(slot, existingAppointments, bufferMinutes)
-        ) {
-          slotStart += stepMs;
+        // Filter: no buffered collision with existing — fast-forward past it.
+        const existingEnd = existingCollisionEnd(
+          slot,
+          existingAppointments,
+          bufferMinutes,
+        );
+        if (existingEnd !== null) {
+          slotStart = ceilToGranularityUtc(existingEnd, SLOT_GRANULARITY_MIN);
           continue;
         }
         slots.push(slot);
-        slotStart += stepMs;
+        slotStart += granStepMs;
       }
     }
   }

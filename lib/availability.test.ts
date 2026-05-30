@@ -122,7 +122,10 @@ describe("computeAvailableSlots — existing appointments + buffer", () => {
     const dateTo = mx("2026-06-03T00:00:00");
     const now = mx("2026-06-01T08:00:00");
 
-    // Existing at 09:00–09:30 → next valid 09:40 (30+10 buffer)
+    // Existing at 09:00–09:30. With 30-min snap + 10-min buffer:
+    // - 09:00 MX collides → excluded
+    // - 09:30 MX slot is 09:30–10:00; padded existing 08:50–09:40 → overlap → excluded
+    // - 10:00 MX slot is 10:00–10:30; padded existing 08:50–09:40 → no overlap → included
     const existing = [
       {
         start_time: mx("2026-06-02T09:00:00"),
@@ -139,10 +142,9 @@ describe("computeAvailableSlots — existing appointments + buffer", () => {
       existingAppointments: existing,
     });
     const offered = slots.map((s) => s.start.toISOString().slice(11, 16));
-    // 09:00 MX collides exactly → excluded
-    expect(offered).not.toContain("15:00");
-    // 09:40 MX = 15:40 UTC: slot 09:40-10:10. Existing padded 08:50-09:40. Touching at 09:40 — NOT overlapping (strict <). Should be included.
-    expect(offered).toContain("15:40");
+    expect(offered).not.toContain("15:00"); // 09:00 MX
+    expect(offered).not.toContain("15:30"); // 09:30 MX (buffer overlap)
+    expect(offered).toContain("16:00"); // 10:00 MX (first valid after fast-forward)
   });
 });
 
@@ -169,12 +171,13 @@ describe("computeAvailableSlots — blocked periods", () => {
       existingAppointments: [],
     });
     const offered = slots.map((s) => s.start.toISOString().slice(11, 16));
-    // 10:20 MX (16:20 UTC), 11:00 MX (17:00), 11:40 (17:40) should be excluded
-    expect(offered).not.toContain("16:20");
+    // With 30-min snap: 10:00, 10:30, 11:00, 11:30 MX all sit inside the block → excluded
+    expect(offered).not.toContain("16:00");
+    expect(offered).not.toContain("16:30");
     expect(offered).not.toContain("17:00");
-    expect(offered).not.toContain("17:40");
-    // 12:20 MX = 18:20 UTC should be included (block ends 12:00)
-    expect(offered).toContain("18:20");
+    expect(offered).not.toContain("17:30");
+    // 12:00 MX = 18:00 UTC: block ended at 12:00 (strict <), slot 12:00–12:30 → included
+    expect(offered).toContain("18:00");
   });
 });
 
@@ -220,6 +223,89 @@ describe("computeAvailableSlots — min/max booking bounds", () => {
   });
 });
 
+describe("computeAvailableSlots — :00/:30 granularity snap (Mari Carmen)", () => {
+  it("45-min appointment ending at 17:15 → next slot at 17:30, not 17:15", () => {
+    const dateFrom = mx("2026-06-02T00:00:00");
+    const dateTo = mx("2026-06-03T00:00:00");
+    const now = mx("2026-06-01T08:00:00");
+
+    // Existing 45-min booking 16:30–17:15 MX
+    const existing = [
+      {
+        start_time: mx("2026-06-02T16:30:00"),
+        end_time: mx("2026-06-02T17:15:00"),
+      },
+    ];
+    const slots = computeAvailableSlots({
+      dateFrom,
+      dateTo,
+      now,
+      // Zero buffer to isolate the snap behavior.
+      config: { ...cfg, durationMinutes: 45, bufferMinutes: 0 },
+      workingHours: baseWorkingHours,
+      blockedPeriods: [],
+      existingAppointments: existing,
+    });
+    const offered = slots.map((s) => s.start.toISOString().slice(11, 16));
+    // 17:15 UTC (= 11:15 MX) should never be generated — not on the :00/:30 grid.
+    expect(offered).not.toContain("17:15");
+    expect(offered).not.toContain("23:15"); // 17:15 MX UTC
+    // 17:30 MX = 23:30 UTC → first valid slot after the existing booking.
+    expect(offered).toContain("23:30");
+  });
+
+  it("with no existing bookings, 45-min slots are offered every 30 min", () => {
+    const dateFrom = mx("2026-06-02T00:00:00");
+    const dateTo = mx("2026-06-03T00:00:00");
+    const now = mx("2026-06-01T08:00:00");
+
+    const slots = computeAvailableSlots({
+      dateFrom,
+      dateTo,
+      now,
+      config: { ...cfg, durationMinutes: 45, bufferMinutes: 0 },
+      workingHours: baseWorkingHours,
+      blockedPeriods: [],
+      existingAppointments: [],
+    });
+    const offered = slots.map((s) => s.start.toISOString().slice(11, 16));
+    // Morning window 09:00–14:00 MX = 15:00–20:00 UTC.
+    // Slots: 09:00, 09:30, 10:00, …, 13:00 (13:00+45=13:45 ≤14 ✓; 13:30+45=14:15 ✗)
+    expect(offered).toContain("15:00"); // 09:00 MX
+    expect(offered).toContain("15:30"); // 09:30 MX
+    expect(offered).toContain("16:00"); // 10:00 MX
+    expect(offered).not.toContain("15:45"); // never on the grid
+    expect(offered).not.toContain("19:30"); // 13:30 MX (would end 14:15, out of window)
+  });
+
+  it("buffer pushes next slot past the next :00/:30 if needed", () => {
+    const dateFrom = mx("2026-06-02T00:00:00");
+    const dateTo = mx("2026-06-03T00:00:00");
+    const now = mx("2026-06-01T08:00:00");
+
+    // 45-min existing 16:30–17:15 MX with 20-min buffer:
+    // collision region extends until 17:35 MX → next valid start snaps to 18:00 MX.
+    const existing = [
+      {
+        start_time: mx("2026-06-02T16:30:00"),
+        end_time: mx("2026-06-02T17:15:00"),
+      },
+    ];
+    const slots = computeAvailableSlots({
+      dateFrom,
+      dateTo,
+      now,
+      config: { ...cfg, durationMinutes: 45, bufferMinutes: 20 },
+      workingHours: baseWorkingHours,
+      blockedPeriods: [],
+      existingAppointments: existing,
+    });
+    const offered = slots.map((s) => s.start.toISOString().slice(11, 16));
+    expect(offered).not.toContain("23:30"); // 17:30 MX — too close (within buffer)
+    expect(offered).toContain("00:00"); // 18:00 MX = 00:00 UTC next day
+  });
+});
+
 describe("groupSlotsByDay", () => {
   it("groups slots by clinic-local calendar day", () => {
     const dateFrom = mx("2026-06-02T00:00:00");
@@ -257,9 +343,10 @@ describe("computeAvailableSlots — 60-minute appointments (first consultation)"
       blockedPeriods: [],
       existingAppointments: [],
     });
-    // 60+10=70min step. Morning 09–14 (300min) → floor(300/70)=4 slots starting at 09, 10:10, 11:20, 12:30
-    // (12:30 + 60 = 13:30 ≤ 14 ✓)
-    // Afternoon 16–19 (180min) → floor(180/70)=2 slots: 16:00, 17:10 (17:10+60=18:10 ≤19 ✓)
-    expect(slots.length).toBe(6);
+    // With 30-min snap: morning 09–14 starts at 09:00, 09:30, …, 13:00
+    // (13:00+60=14:00 ≤14 ✓; 13:30+60=14:30 ✗) → 9 slots.
+    // Afternoon 16–19: 16:00, 16:30, 17:00, 17:30, 18:00
+    // (18:00+60=19:00 ≤19 ✓; 18:30+60=19:30 ✗) → 5 slots.
+    expect(slots.length).toBe(14);
   });
 });
