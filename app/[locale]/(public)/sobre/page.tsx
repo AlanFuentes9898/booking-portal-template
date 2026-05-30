@@ -35,9 +35,6 @@ export default async function AboutPage({ params }: Props) {
     <section className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-16 grid lg:grid-cols-2 gap-12 items-start">
       <div>
         <h1 className="text-4xl sm:text-5xl">{t("aboutTitle")}</h1>
-        <p className="mt-5 text-lg text-[color:var(--color-brand-ink)]/80">
-          {t("aboutLead")}
-        </p>
         <div className="mt-8 space-y-4 text-[color:var(--color-brand-ink)]/75 leading-relaxed whitespace-pre-wrap">
           {bio ? (
             <p>{bio}</p>
