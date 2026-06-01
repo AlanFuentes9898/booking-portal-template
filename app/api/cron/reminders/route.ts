@@ -106,9 +106,18 @@ export async function GET(req: NextRequest) {
     const formattedTime = formatTz(a.start_time, "HH:mm");
     const manageUrl = `${publicEnv.NEXT_PUBLIC_APP_URL}/cita/${a.cancellation_token}`;
 
+    // Pick "hoy" vs "mañana" copy based on the appointment's calendar day in
+    // clinic TZ relative to today. The window can include same-day
+    // appointments when run on a wider horizon.
+    const todayKey = formatTz(now, "yyyy-MM-dd");
+    const apptKey = formatTz(a.start_time, "yyyy-MM-dd");
+    const when: "today" | "tomorrow" = apptKey === todayKey ? "today" : "tomorrow";
+    const subjectWord =
+      when === "today" ? "tu cita es hoy" : "tu cita es mañana";
+
     const result = await sendEmail({
       to: patient.email,
-      subject: `Recordatorio: tu cita es mañana — ${formattedDate}`,
+      subject: `Recordatorio: ${subjectWord} — ${formattedDate}`,
       recipientType: "patient",
       appointmentId: a.id,
       templateKey: REMINDER_TEMPLATE_KEY,
@@ -123,6 +132,7 @@ export async function GET(req: NextRequest) {
         manageUrl,
         brandName: brand.name,
         officeCity: settings.office_city,
+        when,
       }),
     });
 

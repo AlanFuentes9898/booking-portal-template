@@ -23,14 +23,23 @@ export type AppointmentReminderProps = {
   brandName?: string;
   /** Short city label shown next to the time, e.g. "CDMX", "Morelia". */
   officeCity?: string;
+  /** Whether the appointment is later today or the next day (in clinic TZ). */
+  when: "today" | "tomorrow";
 };
 
 const COPY = {
   es: {
-    preview: "Recordatorio: tu cita es mañana",
-    title: "Tu cita es mañana",
+    today: {
+      preview: "Recordatorio: tu cita es hoy",
+      title: "Tu cita es hoy",
+      body: "Te recordamos que hoy tienes consulta agendada.",
+    },
+    tomorrow: {
+      preview: "Recordatorio: tu cita es mañana",
+      title: "Tu cita es mañana",
+      body: "Te recordamos que mañana tienes consulta agendada.",
+    },
     greeting: "Hola",
-    body: "Te recordamos que mañana tienes consulta agendada.",
     details: "Detalles",
     type: "Tipo",
     date: "Fecha",
@@ -47,10 +56,17 @@ const COPY = {
     signoff: "Nos vemos pronto,",
   },
   en: {
-    preview: "Reminder: your appointment is tomorrow",
-    title: "Your appointment is tomorrow",
+    today: {
+      preview: "Reminder: your appointment is today",
+      title: "Your appointment is today",
+      body: "Friendly reminder that you have a consultation booked for today.",
+    },
+    tomorrow: {
+      preview: "Reminder: your appointment is tomorrow",
+      title: "Your appointment is tomorrow",
+      body: "Friendly reminder that you have a consultation booked for tomorrow.",
+    },
     greeting: "Hi",
-    body: "Friendly reminder that you have a consultation booked for tomorrow.",
     details: "Details",
     type: "Type",
     date: "Date",
@@ -70,11 +86,12 @@ const COPY = {
 
 export function AppointmentReminderEmail(props: AppointmentReminderProps) {
   const t = COPY[props.locale];
+  const w = t[props.when];
   const brand = props.brandName ?? "Mi Clínica";
   return (
     <Html>
       <Head />
-      <Preview>{t.preview}</Preview>
+      <Preview>{w.preview}</Preview>
       <Body
         style={{
           backgroundColor: "#f6f7f2",
@@ -111,10 +128,10 @@ export function AppointmentReminderEmail(props: AppointmentReminderProps) {
               as="h1"
               style={{ fontSize: 22, margin: "12px 0 0 0", color: "#2a2a2a" }}
             >
-              {t.title}
+              {w.title}
             </Heading>
             <Text style={{ marginTop: 12 }}>
-              {t.greeting} {props.patientName}, {t.body.toLowerCase()}
+              {t.greeting} {props.patientName}, {w.body.toLowerCase()}
             </Text>
           </Section>
 
